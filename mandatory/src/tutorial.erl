@@ -23,7 +23,7 @@ hello() ->
 %%%%%%%%%%  Recursive functions %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% @doc TODO: add description here
+%% @doc Prints hello N times
 -spec hello(N::integer()) -> ok.
 
 hello(0) ->
@@ -58,15 +58,14 @@ fac(N) -> N*fac(N-1).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% @doc The factorial function, implemented using tail recursion.
--spec fac_tr(N::integer()) -> integer().
+-spec fac_tr(N::integer(), Acc::integer()) -> integer().
 
 fac_tr(N) ->
     fac_tr(N,1).
-
 fac_tr(0, Acc) ->
     Acc;
 fac_tr(N, Acc) ->
-    tbi.
+    fac_tr(N-1, N*Acc).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -89,7 +88,14 @@ fac_tr(N, Acc) ->
 
 right_triangles(N) ->
     L = lists:seq(1, N),
-    tbi.
+    [{A, B, C} ||
+        C <- L,
+        A <- L,
+        B <- L,
+        A < C,
+        B < C,
+        A*A + B*B =:= C*C].
+
 
 %% @doc Returns a list of tuples, where each tuple describes a caracter in the Simposon family.
 %%
@@ -139,13 +145,13 @@ simpsons() ->
       Name::string().
 
 simpsons(names) ->
-    tbi;
+    [Name || {_, _, Name} <- simpsons()];
 simpsons(males) ->
-    tbi;
+    [Name || {_, Gender, Name} <- simpsons(), Gender =:= male];
 simpsons(females) ->
-    tbi;
+    [Name || {_, Gender, Name} <- simpsons(), Gender =:= female];
 simpsons(pets) ->
-    tbi.
+    [Name || {Type, _, Name} <- simpsons(), (Type =:= cat) or (Type =:= dog) or (Type =:= pig)].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Guarded Functions  %%%%%%%%%%
@@ -161,8 +167,11 @@ simpsons(pets) ->
 %% </div>
 -spec char_to_upper(char()) -> char().
 
-char_to_upper(Char) when true->
-    tbi.
+char_to_upper(Char) when
+    (Char >= $a) and (Char =< $z) -> 
+        Char - 32;
+char_to_upper(Char) -> Char.
+
 
 %% @doc Convert a character to lower case.
 %% === Example ===
