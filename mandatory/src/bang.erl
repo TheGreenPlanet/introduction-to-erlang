@@ -13,6 +13,7 @@ start() ->
     io:format("~nSupervisor with PID ~p started~n", [self()]),
 
     %% TODO: trap the exit signal.
+    process_flag(trap_exit, true),
 
     Counter = 5,
     start_bang(Counter),
@@ -32,7 +33,14 @@ supervisor_loop(Counter) ->
             io:format("~w ~s~n", [N, counter_msg(N)]),
             supervisor_loop(N - 1);
         {'EXIT', PID, Reason} ->
-            io:format("Process ~w terminated with reason ~w!~n", [PID, Reason])
+            case Reason of
+                bang ->
+                    io:format(">>BANG<<");
+                _ -> 
+                    start_bang(Counter)
+                %%_ ->
+                    %%io:format("Process ~w terminated with reason ~w!~n", [PID, Reason])
+            end
     end.
 
 bang(Supervisor, 0) ->
@@ -41,6 +49,6 @@ bang(Supervisor, 0) ->
     exit(bang);
 bang(Supervisor, Counter) ->
     timer:sleep(1000),
-    %% death:gamble(0.3),
+    death:gamble(0),
     Supervisor ! {countdown, Counter},
     bang(Supervisor, Counter - 1).
