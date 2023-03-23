@@ -183,9 +183,10 @@ char_to_upper(Char) -> Char.
 %% </div>
 -spec char_to_lower(char()) -> char().
 
-char_to_lower(Char) when true ->
-    tbi.
-
+char_to_lower(Char) when
+    (Char >= $A) and (Char =< $Z) -> 
+        Char + 32;
+char_to_lower(Char) -> Char.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Map  %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,7 +202,7 @@ char_to_lower(Char) when true ->
 -spec str_to_upper(string()) -> string().
 
 str_to_upper(String) ->
-    tbi.
+    lists:map(fun char_to_upper/1, String).
 
 
 %% @doc Convert a string to lower case.
@@ -213,7 +214,7 @@ str_to_upper(String) ->
 -spec str_to_lower(string()) -> string().
 
 str_to_lower(String) ->
-    tbi.
+    lists:map(fun char_to_lower/1, String).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Fold %%%%%%%%%%
@@ -230,7 +231,7 @@ str_to_lower(String) ->
       M::integer().
 
 max([H | T]) ->
-    F = tbi,
+    F = fun(X, Max) -> if X > Max -> X; true -> Max end end,
     lists:foldl(F, H, T).
 
 
@@ -246,9 +247,7 @@ max([H | T]) ->
       Char::char().
 
 count(String, Char) ->
-
-    F = tbi,
-
+    F = fun(C, Acc) -> if C == Char -> Acc + 1; true -> Acc end end,
     lists:foldl(F, 0, String).
 
 
@@ -267,7 +266,7 @@ count(String, Char) ->
 odd_and_even(List) ->
     F = fun(X, {{odd, Odd}, {even, Even}}) when X rem 2 == 0 ->
                 {{odd, Odd}, {even, [X | Even]}};
-           (X, {{odd, Odd}, {even, Even}})  -> tbi
+           (X, {{odd, Odd}, {even, Even}})  -> {{odd, [X | Odd]}, {even, Even}}
         end,
 
     lists:foldl(F, {{odd, []}, {even, []}}, List).
