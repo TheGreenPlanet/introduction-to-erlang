@@ -12,13 +12,13 @@
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
-%% A common pattern is Erlang is to provide services as separate
+%% A common pattern in Erlang is to provide services as separate
 %% processes. In this module we spawn a new process to keep the state
 %% of a FIFO queue.
 
 
 %% @doc Creates a new FIFO queue.
--opaque sfifo()::pid().
+-opaque sfifo() :: pid().
 -spec new() -> sfifo().
 
 new() ->
@@ -28,12 +28,25 @@ new() ->
 
 loop(Fifo) ->
     receive
-	{size, PID} ->
-	    PID ! {size, fifo:size(Fifo)},
-	    loop(Fifo);
-	{empty, PID} ->
-	    PID ! fifo:empty(Fifo),
-	    loop(Fifo)
+        {size, PID} ->
+            PID ! {size, fifo:size(Fifo)},
+            loop(Fifo);
+        {empty, PID} ->
+            PID ! fifo:empty(Fifo),
+            loop(Fifo);
+        {push, Value, PID} ->
+            NewFifo = fifo:in(Value, Fifo),
+            PID ! ok,
+            loop(NewFifo);
+        {pop, PID} ->
+            case fifo:out(Fifo) of
+                {Value, NewFifo} ->
+                    PID ! {ok, Value},
+                    loop(NewFifo);
+                empty ->
+                    PID ! empty,
+                    loop(Fifo)
+            end
     end.
 
 
@@ -47,27 +60,33 @@ loop(Fifo) ->
 size(Fifo) ->
     Fifo ! {size, self()},
     receive
-	{size, Size} ->
-	    Size
+        {size, Size} ->
+            Size
     end.
 
 %% @doc Returns true if Fifo is empty, otherwise returns false.
--spec empty(Fifo) -> true|false when Fifo::sfifo().
+-spec empty(Fifo) -> true | false when Fifo::sfifo().
 
 empty(Fifo) ->
     Fifo ! {empty, self()},
     receive
-	true ->
-	    true;
-	false  ->
-	    false
+        true ->
+            true;
+        false ->
+            false
     end.
 
 %% @doc Pops a value from Fifo.
 -spec pop(Fifo) -> term() when Fifo::sfifo().
 
 pop(Fifo) ->
-    tbi.
+    Fifo ! {pop, self()},
+    receive
+        {ok, Value} ->
+            Value;
+        empty ->
+            empty
+    end.
 
 
 %% @doc Push a new value to Fifo.
@@ -75,8 +94,11 @@ pop(Fifo) ->
       Fifo::sfifo(),
       Value::term().
 push(Fifo, Value) ->
-    ok.
-
+    Fifo ! {push, Value, self()},
+    receive
+        ok ->
+            ok
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                         EUnit Test Cases                                  %%
