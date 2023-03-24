@@ -35,11 +35,13 @@ supervisor_loop(Counter) ->
         {'EXIT', PID, Reason} ->
             case Reason of
                 bang ->
-                    io:format(">>BANG<<");
-                _ -> 
-                    start_bang(Counter)
-                %%_ ->
-                    %%io:format("Process ~w terminated with reason ~w!~n", [PID, Reason])
+                    io:format(">>BANG<<~n");
+                random_death -> 
+                    io:format("bang(~w) with PID ~p died~n", [Counter, PID]),
+                    start_bang(Counter),
+                    supervisor_loop(Counter);
+                _ ->
+                    io:format("Process ~w terminated with reason ~w!~n", [PID, Reason])
             end
     end.
 
@@ -49,6 +51,6 @@ bang(Supervisor, 0) ->
     exit(bang);
 bang(Supervisor, Counter) ->
     timer:sleep(1000),
-    death:gamble(0),
+    death:gamble(0.3),
     Supervisor ! {countdown, Counter},
     bang(Supervisor, Counter - 1).
