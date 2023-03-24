@@ -35,15 +35,16 @@ loop(Fifo) ->
             PID ! fifo:empty(Fifo),
             loop(Fifo);
         {push, Value, PID} ->
-            NewFifo = fifo:in(Value, Fifo),
+            NewFifo = fifo:push(Fifo, Value),
             PID ! ok,
             loop(NewFifo);
         {pop, PID} ->
-            case fifo:out(Fifo) of
-                {Value, NewFifo} ->
+            case fifo:empty(Fifo) of
+                false ->
+                    {Value, NewFifo} = fifo:pop(Fifo),
                     PID ! {ok, Value},
                     loop(NewFifo);
-                empty ->
+                true ->
                     PID ! empty,
                     loop(Fifo)
             end
@@ -90,7 +91,7 @@ pop(Fifo) ->
 
 
 %% @doc Push a new value to Fifo.
--spec push(Fifo, Value) -> ok when
+-spec push(Fifo, Value) -> ok when %% TODO: implement this
       Fifo::sfifo(),
       Value::term().
 push(Fifo, Value) ->
@@ -99,6 +100,7 @@ push(Fifo, Value) ->
         ok ->
             ok
     end.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                         EUnit Test Cases                                  %%
