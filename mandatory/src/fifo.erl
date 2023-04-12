@@ -10,7 +10,6 @@
 
 %% @doc Creates an empty FIFO buffer.
 -opaque fifo()::{fifo, list(), list()}.
--export_type([fifo/0]).
 -spec new() -> fifo().
 
 %% Represent the FIFO using a 3-tuple {fifo, In, Out} where In and
@@ -18,34 +17,48 @@
 
 new() -> {fifo, [], []}.
 
-%% @doc Returns the number of elements in the FIFO buffer.
+%% @doc Calculates the size of the fifo
 -spec size(Fifo) -> integer() when
       Fifo::fifo().
 
 size({fifo, In, Out}) ->
     length(In) + length(Out).
 
-%% @doc Pushes an element onto the end of the FIFO buffer.
--spec push(Fifo, Elem) -> fifo() when Fifo::fifo(), Elem::any().
+%% @doc Pushes a new value to the fifo. Returns the updated fifo.
+-spec push(Fifo, X) -> fifo() when
+      Fifo::fifo(),
+      X::any().
 
 %% To make it fast to push new values, add a new value to the head of
 %% In.
-push({fifo, In, Out}, X) -> {fifo, [X | In], Out}.
 
-%% @doc Removes and returns the first element from the FIFO buffer.
-%% @throws 'empty fifo' if the FIFO buffer is empty
--spec pop({fifo(), list(), list()}) -> {any(), {fifo(), list(), list()}}.
+push({fifo, In, Out}, X) ->
+  {fifo, [X | In], Out}.
+
+%% @doc Pops a value from the fifo. Returns the pop:ed value and the updated fifo.
+%% @throws 'empty fifo'
+-spec pop(Fifo) -> {any(), fifo()} when
+      Fifo::fifo().
+
+%% pop should return {Value, NewFifo}
+
 pop({fifo, [], []}) ->
     erlang:error('empty fifo');
-pop({fifo, [H|T], Out}) ->
-    {H, {fifo, T, Out}};
+
+%% To make pop fast we want to pop of the head of the Out list.
+
+pop({fifo, In, [H|T]}) ->
+  {H, {fifo, In, T}};
+
+%% When Out is empty, we must take a performance penalty. Use the
+%% reverse of In as the new Out and an empty lists as the new In, then
+%% pop as usual.
+
 pop({fifo, In, []}) ->
-    {Value, {fifo, [], Tail}} = pop({fifo, lists:reverse(In), []}),
-    Tail = lists:reverse(Tail),
-    {Value, {fifo, [], Tail}}.
+  pop({fifo, [], lists:reverse(In, [])}).
 
 
-%% @doc TODO Add a description
+%% @doc Checks if the fifo is empty. Return true if empty, otherwise false.
 -spec empty(Fifo) -> boolean() when Fifo::fifo().
 
 empty({fifo, [], []}) ->
